@@ -29,7 +29,7 @@ replay_pid*
 # secrets
 .env
 
-# ms
+# service folders
 ms-passport-inspector/
 ms-passport-inspector-gateway/
 smev-api-mock/
