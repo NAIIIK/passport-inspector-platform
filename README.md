@@ -52,4 +52,4 @@ setup (see below).
 
 - `.env` is git-ignored; only `.env.example` with placeholder values is committed.
 - Service folders (`ms-passport-inspector/`, etc.) are created locally by
-  cloning and are not part of this repository — see `.gitignore`.
+  cloning and are not part of this repository - see `.gitignore`.
