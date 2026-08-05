@@ -39,7 +39,7 @@ setup (see below).
 3. Start everything:
 
 ```bash
-   docker-compose up
+   docker compose up
 ```
 
 4. The gateway will be available at `http://localhost:8082`.
