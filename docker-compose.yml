@@ -1,0 +1,73 @@
+services:
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: passport-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - passport-minio-data:/data
+    networks:
+      - passport-network
+
+  smev-api-mock:
+    build:
+      context: ./smev-api-mock
+    container_name: smev-api-mock
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8081
+      JAVA_OPTS: "-Xms256m -Xmx256m"
+    networks:
+      - passport-network
+
+  passport-inspector:
+    build:
+      context: ./ms-passport-inspector
+    container_name: ms-passport-inspector
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8080
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: passport-inspector
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    depends_on:
+      - minio
+      - smev-api-mock
+    networks:
+      - passport-network
+
+  passport-bff:
+    build:
+      context: ./ms-passport-inspector-gateway
+    container_name: ms-passport-inspector-gateway
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8082
+      PASSPORT_INSPECTOR_CLIENT_URL: http://passport-inspector:8080
+      PASSPORT_INSPECTOR_CLIENT_MERCHANT_ID: ${PASSPORT_MERCHANT_ID}
+      PASSPORT_INSPECTOR_CLIENT_TOKEN: ${PASSPORT_INSPECTOR_TOKEN}
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    depends_on:
+      - passport-inspector
+    networks:
+      - passport-network
+
+volumes:
+  passport-minio-data:
+
+networks:
+  passport-network:
+    driver: bridge
