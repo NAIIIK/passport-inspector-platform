@@ -23,5 +23,9 @@
 hs_err_pid*
 replay_pid*
 
-#secrets
+# secrets
 .env
+
+ms-passport-inspector/
+ms-passport-inspector-gateway/
+smev-api-mock/
