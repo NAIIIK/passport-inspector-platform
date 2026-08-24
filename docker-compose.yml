@@ -5,9 +5,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: passport_inspector
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:passport_inspector}
+      POSTGRES_USER: ${POSTGRES_USER:postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:postgres}
     volumes:
       - passport-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -26,8 +26,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minio99
-      MINIO_ROOT_PASSWORD: minio123
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:minio99}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:minio123}
     volumes:
       - passport-minio-data:/data
     networks:
@@ -56,19 +56,19 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       SERVER_PORT: 8080
 
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/passport_inspector
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:passport_inspector}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:postgres}
 
       MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: minio99
-      MINIO_SECRET_KEY: minio123
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:minio99}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:minio123}
       MINIO_BUCKET: passport-inspector
 
       SMEV_CLIENT_URL: http://smev-api-mock:8081
-      SMEV_CLIENT_TOKEN: test-token
+      SMEV_CLIENT_TOKEN: ${SMEV_CLIENT_TOKEN:test-token}
 
-      JWT_SECRET: demo-demo-demo-demo-demo-demo-demo-demo-secret
+      JWT_SECRET: ${JWT_SECRET:demo-demo-demo-demo-demo-demo-demo-demo-secret}
 
       CSV_PARSER_WORKER_ENABLED: "true"
       CSV_PARSER_WORKER_FIXED_DELAY_MS: 3000
@@ -96,7 +96,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       SERVER_PORT: 8082
       PASSPORT_INSPECTOR_CLIENT_URL: http://passport-inspector:8080
-      JWT_SECRET: demo-demo-demo-demo-demo-demo-demo-demo-secret
+      JWT_SECRET: ${JWT_SECRET:demo-demo-demo-demo-demo-demo-demo-demo-secret}
       JAVA_OPTS: "-Xms256m -Xmx512m"
     depends_on:
       - passport-inspector
@@ -123,8 +123,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: 1234567890!
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:1234567890!}
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
