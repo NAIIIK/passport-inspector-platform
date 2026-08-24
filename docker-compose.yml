@@ -1,4 +1,23 @@
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: passport-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: passport_inspector
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - passport-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d passport_inspector"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - passport-network
+
   minio:
     image: quay.io/minio/minio:latest
     container_name: passport-minio
@@ -7,8 +26,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: minio99
+      MINIO_ROOT_PASSWORD: minio123
     volumes:
       - passport-minio-data:/data
     networks:
@@ -29,43 +48,95 @@ services:
 
   passport-inspector:
     build:
-      context: ./ms-passport-inspector
-    container_name: ms-passport-inspector
+      context: ./QueenPassportInspector
+    container_name: queen-passport-inspector
     ports:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SERVER_PORT: 8080
+
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/passport_inspector
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+
       MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_ACCESS_KEY: minio99
+      MINIO_SECRET_KEY: minio123
       MINIO_BUCKET: passport-inspector
+
+      SMEV_CLIENT_URL: http://smev-api-mock:8081
+      SMEV_CLIENT_TOKEN: test-token
+
+      JWT_SECRET: demo-demo-demo-demo-demo-demo-demo-demo-secret
+
+      CSV_PARSER_WORKER_ENABLED: "true"
+      CSV_PARSER_WORKER_FIXED_DELAY_MS: 3000
+      PASSPORT_CHECK_WORKER_ENABLED: "true"
+      PASSPORT_CHECK_WORKER_FIXED_DELAY_MS: 3000
+
       JAVA_OPTS: "-Xms256m -Xmx512m"
     depends_on:
-      - minio
-      - smev-api-mock
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      smev-api-mock:
+        condition: service_started
     networks:
       - passport-network
 
   passport-bff:
     build:
-      context: ./ms-passport-inspector-gateway
-    container_name: ms-passport-inspector-gateway
+      context: ./PassportInspectorGateway
+    container_name: queen-passport-bff
     ports:
       - "8082:8082"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SERVER_PORT: 8082
       PASSPORT_INSPECTOR_CLIENT_URL: http://passport-inspector:8080
-      PASSPORT_INSPECTOR_CLIENT_MERCHANT_ID: ${PASSPORT_MERCHANT_ID}
-      PASSPORT_INSPECTOR_CLIENT_TOKEN: ${PASSPORT_INSPECTOR_TOKEN}
+      JWT_SECRET: demo-demo-demo-demo-demo-demo-demo-demo-secret
       JAVA_OPTS: "-Xms256m -Xmx512m"
     depends_on:
       - passport-inspector
     networks:
       - passport-network
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: passport-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - passport-bff
+      - passport-inspector
+      - smev-api-mock
+    networks:
+      - passport-network
+
+  grafana:
+    image: grafana/grafana:11.1.4
+    container_name: passport-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: 1234567890!
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - passport-network
+
 volumes:
+  passport-postgres-data:
   passport-minio-data:
 
 networks:
