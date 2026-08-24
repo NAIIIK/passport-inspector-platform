@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: "passport-gateway"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets:
+          - "passport-bff:8082"
+        labels:
+          service: "queen-passport-bff"
+
+  - job_name: "passport-inspector"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets:
+          - "passport-inspector:8080"
+        labels:
+          service: "queen-passport-inspector"
+
+  - job_name: "smev-api-mock"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets:
+          - "smev-api-mock:8081"
+        labels:
+          service: "smev-api-mock"
