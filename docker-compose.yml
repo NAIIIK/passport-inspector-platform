@@ -48,8 +48,8 @@ services:
 
   passport-inspector:
     build:
-      context: ./QueenPassportInspector
-    container_name: queen-passport-inspector
+      context: ./ms-passport-inspector
+    container_name: ms-passport-inspector
     ports:
       - "8080:8080"
     environment:
@@ -88,8 +88,8 @@ services:
 
   passport-bff:
     build:
-      context: ./PassportInspectorGateway
-    container_name: queen-passport-bff
+      context: ./ms-passport-inspector-gateway
+    container_name: ms-passport-bff
     ports:
       - "8082:8082"
     environment:
